@@ -1,2 +1,223 @@
-hello! Everyone!
-BEYBEYBEYEBEY
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Growing Clock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .clock-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .clock-container:hover {
+            transform: scale(1.05);
+        }
+
+        #clock {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px 50px;
+            border-radius: 20px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 3px;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .info {
+            margin-top: 30px;
+            color: white;
+            font-size: 1.1rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-item {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 2s ease-out forwards;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>⏰ Interactive Growing Clock ⏰</h1>
+        <div class="clock-container" id="clockContainer">
+            <div id="clock">00:00:00</div>
+        </div>
+        <div class="info">
+            <p>👆 Click, hover, or move your mouse near the clock to make it
+                grow!</p>
+            <div class="stats">
+                <div class="stat-item">Interactions: <span
+                        id="interactionCount">0</span></div>
+                <div class="stat-item">Current Size: <span
+                        id="currentSize">100</span>%</div>
+                <div class="stat-item">Growth Level: <span
+                        id="growthLevel">1</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Clock variables
+        const clockElement = document.getElementById('clock');
+        const clockContainer = document.getElementById('clockContainer');
+        const interactionCountElement = document.getElementById('interactionCount');
+        const currentSizeElement = document.getElementById('currentSize');
+        const growthLevelElement = document.getElementById('growthLevel');
+
+        let currentScale = 1;
+        let interactionCount = 0;
+        const growthPerInteraction = 0.05;
+        const maxScale = 5;
+
+        // Update clock time
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            clockElement.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        // Create particle effect
+        function createParticle(x, y) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            document.body.appendChild(particle);
+
+            setTimeout(() => {
+                particle.remove();
+            }, 2000);
+        }
+
+        // Grow clock function
+        function growClock() {
+            if (currentScale < maxScale) {
+                currentScale += growthPerInteraction;
+                interactionCount++;
+
+                clockElement.style.transform = `scale(${currentScale})`;
+
+                // Update stats
+                interactionCountElement.textContent = interactionCount;
+                currentSizeElement.textContent = Math.round(currentScale * 100);
+                growthLevelElement.textContent = Math.ceil(currentScale);
+
+                // Add color effect based on size
+                const hue = Math.min(270, 230 + (currentScale - 1) * 30);
+                clockElement.style.color = `hsl(${hue}, 70%, 50%)`;
+            }
+        }
+
+        // Event listeners
+        clockContainer.addEventListener('click', (e) => {
+            growClock();
+            createParticle(e.clientX, e.clientY);
+        });
+
+        clockContainer.addEventListener('mouseenter', () => {
+            growClock();
+        });
+
+        let mouseMoveTimeout;
+        document.addEventListener('mousemove', (e) => {
+            const rect = clockContainer.getBoundingClientRect();
+            const distance = Math.hypot(
+                e.clientX - (rect.left + rect.width / 2),
+                e.clientY - (rect.top + rect.height / 2)
+            );
+
+            // If mouse is within 200px of the clock
+            if (distance < 200) {
+                clearTimeout(mouseMoveTimeout);
+                mouseMoveTimeout = setTimeout(() => {
+                    growClock();
+                }, 500);
+            }
+        });
+
+        // Initialize clock
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Add pulse animation when max size is reached
+        setInterval(() => {
+            if (currentScale >= maxScale) {
+                clockElement.style.animation = 'none';
+                setTimeout(() => {
+                    clockElement.style.animation = '';
+                }, 10);
+            }
+        }, 2000);
+    </script>
+</body>
+
+</html>
